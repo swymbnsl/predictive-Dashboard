@@ -1,0 +1,225 @@
+/* Ensure active navbar link is always styled */
+a.active {
+  background: #00eaff;
+  color: #181c2a !important;
+  box-shadow: 0 2px 12px #00eaff44;
+}
+
+
+
+
+.main-content {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #1e215d 0%, #232946 60%, #2d1e46 100%);
+  margin: 0;
+  color: #f3f6fa;
+  min-height: 100vh;
+  letter-spacing: 0.01em;
+  transition: background 0.3s;
+  overflow-x: hidden;
+}
+
+.navbar {
+  background: rgba(24, 28, 42, 0.98);
+  color: #fff;
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* width removed to prevent overflow */
+  z-index: 100;
+  box-shadow: 0 4px 24px #000a;
+  border-bottom: 1.5px solid #232946;
+}
+
+.navbar .logo {
+  font-weight: 800;
+  font-size: 1.7rem;
+  letter-spacing: 2px;
+  color: #ffd700;
+  text-shadow: 0 2px 12px #0008;
+  user-select: none;
+  filter: drop-shadow(0 2px 8px #fff3);
+}
+
+.navbar ul {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.navbar ul li {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.navbar ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.4rem 1rem;
+  border-radius: 7px;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  min-width: 0;
+  overflow: visible;
+}
+
+
+.navbar ul li a:hover {
+  background: #ffd700;
+  color: #181c2a;
+  box-shadow: 0 2px 12px #ffd70044;
+  text-decoration: none;
+}
+
+ .section {
+  background: rgba(34, 40, 60, 0.55);
+  border-radius: 22px;
+  box-shadow: 0 8px 40px #2d1e4680, 0 1.5px 0 #232946;
+  margin: 0 auto;
+  border: 1.5px solid rgba(127, 90, 240, 0.18);
+  backdrop-filter: blur(16px) saturate(1.2);
+  transition: box-shadow 0.2s, border 0.2s, background 0.2s;
+  position: relative;
+  z-index: 1;
+  height: calc(100vh - 80px - 2.7rem - 2.3rem - 1.2rem); /* 80px navbar, 2.7rem top, 2.3rem bottom padding, 1.2rem bottom margin */
+  margin-bottom: 1.2rem;
+  max-width: 900px;
+  padding: 2.7rem 3rem 2.3rem 3rem;
+  overflow: hidden;
+  display: block;
+}
+
+.section h2 {
+  font-size: 1.6rem;
+  color: #00eaff;
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+  text-shadow: 0 2px 8px #7f5af088;
+}
+
+.section p,
+.section ul,
+.section li {
+  font-size: 1.13rem;
+  line-height: 1.7;
+  color: #e0e7ff;
+}
+
+.section:hover {
+  box-shadow: 0 12px 48px #000c;
+  border-color: #ffd700;
+  background: rgba(36, 41, 61, 0.97);
+}
+
+.button {
+  background: linear-gradient(90deg, #00eaff 0%, #7f5af0 100%);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 0.8rem 2rem;
+  font-size: 1.13rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 12px #00eaff33;
+  transition: background 0.18s, box-shadow 0.18s, color 0.18s, transform 0.13s;
+  letter-spacing: 0.02em;
+}
+
+.button:hover {
+  background: linear-gradient(90deg, #ffd700 0%, #ffec80 100%);
+  color: #181c2a;
+  box-shadow: 0 4px 24px #ffd70044;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.loader {
+  margin: 2.2rem 0 1.5rem 0;
+  text-align: center;
+}
+
+.loader .bar {
+  display: inline-block;
+  width: 220px;
+  height: 18px;
+  background: linear-gradient(90deg, #7f5af0 70%, #00eaff 100%);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.7rem;
+}
+
+.loader .bar::after {
+  content: '';
+  display: block;
+  width: 60%;
+  height: 100%;
+  background: rgba(255,255,255,0.3);
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: loader-bar 1.2s infinite linear;
+}
+
+.loader p {
+  color: #00eaff;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  font-size: 1.1rem;
+}
+
+@keyframes loader-bar {
+  0% { left: 0; }
+  100% { left: 100%; }
+}
+
+input[type="file"], input[type="date"], select {
+  font-size: 1.08rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  border: 1.5px solid #232946;
+  margin: 0.5rem 0 1rem 0;
+  background: #232946;
+  color: #fff;
+  transition: border 0.18s, box-shadow 0.18s;
+}
+
+input[type="file"]:focus,
+input[type="date"]:focus,
+select:focus {
+  border-color: #00eaff;
+  outline: none;
+  box-shadow: 0 2px 8px #00eaff33;
+}
+
+@media (max-width: 900px) {
+  .section {
+    padding: 1.2rem 0.7rem;
+    max-width: 98vw;
+  }
+  .navbar {
+    padding: 1rem 0.7rem;
+  }
+  .logo {
+    font-size: 1.1rem;
+  }
+}

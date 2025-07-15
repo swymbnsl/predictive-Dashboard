@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "sass-embedded": "^1.89.2"
+  },
+  "dependencies": {
+    "@tsparticles/engine": "^3.8.1",
+    "react-tsparticles": "^2.12.2",
+    "tsparticles": "^2.12.0"
+  }
+}
