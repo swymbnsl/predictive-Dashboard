@@ -1,0 +1,202 @@
+.uploadContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 20px;
+  color: var(--color-light);
+  width: 100%;
+  max-width: 780px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+  padding: 2.5rem 2rem;
+  gap: 2.5rem;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.uploadTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--color-primary);
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.6);
+}
+
+.uploadSubtitle {
+  font-size: 1.25rem;
+  color: var(--color-secondary);
+  margin: 0;
+  text-shadow: 0 0 8px rgba(0, 234, 255, 0.2);
+}
+
+.uploadBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  background: var(--color-border);
+  border: 1.5px solid var(--color-secondary);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.6rem;
+  width: 100%;
+  max-width: 500px;
+  gap: 0.6rem;
+}
+
+.inputGroup:hover {
+  border-color: var(--color-accent);
+}
+
+.fileInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-light);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.45rem 0;
+}
+
+
+.fileInput::file-selector-button {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uploadButton {
+  background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.uploadButton:hover {
+  background: linear-gradient(90deg, var(--color-primary), #ffec80);
+  color: var(--color-dark-bg);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-gold);
+}
+
+.fileName {
+  font-weight: 500;
+  color: #abf;
+}
+
+.downloadSample {
+  font-size: 1rem;
+  color: var(--color-light);
+}
+
+.sampleButton {
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 0.55rem 1.5rem;
+  font-weight: 900;
+  border-radius: 0.7rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.sampleButton:hover {
+  background: var(--color-accent);
+  color: var(--color-dark-bg);
+}
+
+.processing {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-align: center;
+}
+
+.loader {
+  margin-top: 1rem;
+  width: 90%;
+  max-width: 380px;
+  height: 12px;
+  border-radius: 20px;
+  background: #444;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+  animation: loading 2s infinite ease-in-out;
+}
+
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.result {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  color: var(--color-secondary);
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.buttonPrimary {
+  background: var(--color-secondary);
+  color: white;
+  padding: 0.7rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+  border: none;
+}
+
+.buttonPrimary:hover {
+  background: #1db9ff;
+  transform: translateY(-1px);
+}
+
+.buttonSecondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 0.7rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.buttonSecondary:hover {
+  background: var(--color-border);
+  color: white;
+}

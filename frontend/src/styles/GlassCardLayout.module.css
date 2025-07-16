@@ -1,0 +1,19 @@
+.card {
+  background: rgba(34, 40, 60, 0.55);
+  border-radius: 2rem;
+  padding: 3rem 2.5rem;
+  margin: 0 auto; /* ⬅ removed top/bottom margin */
+  box-shadow: 0 8px 40px #2d1e4680, 0 1.5px 0 #ffd700aa;
+  max-width: 1300px;
+  width: 97%;
+  min-height: 85vh;
+  backdrop-filter: blur(16px);
+  border: 1.5px solid #00eaff;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+}
