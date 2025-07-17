@@ -1,31 +1,15 @@
 :root {
   --font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-
-  /* Colors */
-  --color-bg-start: #1e215d;
-  --color-bg-middle: #232946;
-  --color-bg-end: #2d1e46;
-  --color-primary: #ffd700;
-  --color-secondary: #00eaff;
-  --color-accent: #7f5af0;
+  --color-bg: #181c2a;
+  --color-card: #232946;
+  --color-primary: #00eaff;
+  --color-secondary: #ffd700;
+  --color-accent: #22c55e;
   --color-light: #f3f6fa;
   --color-text: #e0e7ff;
   --color-border: #2a2e4a;
-  --color-dark-bg: #181c2a;
-
-  /* Shadows */
-  --shadow-gold: 0 2px 12px #ffd70055;
-  --shadow-blue: 0 2px 12px #00eaff55;
-  --shadow-deep: 0 12px 48px #000c;
-
-  /* Border Radius */
-  --radius-lg: 22px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-
-  /* Spacing */
-  --spacing-md: 1.2rem;
-  --spacing-lg: 2rem;
+  --color-dark-bg: #232946;
+  --radius-lg: 16px;
 }
 
 * {
@@ -37,7 +21,7 @@
 
 html, body {
   font-family: var(--font-family);
-  background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-middle) 60%, var(--color-bg-end));
+  background: var(--color-bg);
   color: var(--color-light);
   min-height: 100vh;
   letter-spacing: 0.01em;
@@ -59,16 +43,18 @@ a {
   padding-top: 0 !important;
   margin-top: 0 !important;
 }
-
+.card{
+  border-radius: 16px;
+}
 .card,
 .section {
-  background: rgba(34, 40, 60, 0.55);
+  background: rgba(24,28,42,0.18);
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 40px #2d1e4680, 0 1.5px 0 var(--color-border);
   border: 1.5px solid var(--color-primary);
   padding: 2rem 3rem;
   width: 100%;
-  max-width: 1100px;
+  min-height: 80vh;
   margin: 0 auto;
   overflow: hidden;
   display: flex;
@@ -78,8 +64,6 @@ a {
 }
 
 .section:hover {
-  background: rgba(36, 41, 61, 0.97);
-  border-color: var(--color-secondary);
   box-shadow: var(--shadow-deep);
 }
 
@@ -142,10 +126,9 @@ a {
   width: 100%;
   max-width: 1150px;
   padding: calc(var(--spacing-lg) + 4rem) var(--spacing-lg) var(--spacing-lg);
-  margin: 0 auto;
   display: flex;
   padding-top: 0 !important;
-  margin-top: 0 !important;
+  margin: 1.5rem auto;
   flex-direction: column;
   justify-content: flex-start;
 }
@@ -157,7 +140,7 @@ a {
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   position: fixed;
   top: 0;
   left: 0;
@@ -207,15 +190,22 @@ a.active {
 }
 
 .section h2 {
-  font-size: 1.6rem;
-  color: var(--color-secondary);
-  margin-bottom: 0.7rem;
+  font-size: 2.2rem;
+  color: var(--color-primary);
+  margin: 0 0 0.2rem 0;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-shadow: 0 2px 8px #7f5af088;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.section p{
+  font-size: 1.15rem;
+  color: #b6eaff;
+  margin: 0 0 0.5rem 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-align: center;
 }
 
-.section p,
 .section ul,
 .section li {
   font-size: 1.13rem;

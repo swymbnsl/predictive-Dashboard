@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import "../styles/globals.css";
 
 const navLinks = [
-  { href: "#upload", label: "🗂 Upload & Report" },
-  { href: "#summary", label: "📄 Summary" },
-  { href: "#trend", label: "📈 Trend" },
-  { href: "#scheduler", label: "🛠 Scheduler" },
-  { href: "#heatmap", label: "🔥 Heatmap" },
-  { href: "#simulator", label: "🔮 Simulator" },
+  { href: "#upload", label: "Upload & Report" },
+  { href: "#summary", label: "Summary" },
+  { href: "#trend", label: "Trend" },
+  { href: "#scheduler", label: "Scheduler" },
+  { href: "#heatmap", label: "Heatmap" },
+  { href: "#simulator", label: "Simulator" },
 ];
 
 const Navbar = () => {
@@ -19,15 +19,22 @@ const Navbar = () => {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    window.location.hash = href;
+    setActive(href);
+  };
+
   return (
     <nav className="navbar">
-      <div className="logo">🛠 Predictive Maintenance</div>
+      <div className="logo">Predictive Maintenance</div>
       <ul>
         {navLinks.map((link) => (
           <li key={link.href}>
             <a
               href={link.href}
               className={active === link.href ? "active" : ""}
+              onClick={(e) => handleNavClick(e, link.href)}
             >
               {link.label}
             </a>

@@ -9,7 +9,6 @@ import WhatIfSimulator from '../components/WhatIfSimulator';
 
 const Home = () => {
   const [showSample, setShowSample] = useState(false);
-
   const [hash, setHash] = useState(window.location.hash || "#upload");
 
   useEffect(() => {
@@ -22,28 +21,39 @@ const Home = () => {
     return <SampleFormat onBack={() => setShowSample(false)} />;
   }
 
-  switch (hash) {
-    case "#upload":
-      return <UploadReport onAnalysisComplete={() => {}} />;
-    case "#summary":
-      return <FaultSummary />;
-    case "#trend":
-      return <FaultTrends />;
-    case "#scheduler":
-      return <Scheduler />;
-    case "#heatmap":
-      return <SensorHeatmap />;
-    case "#simulator":
-      return <WhatIfSimulator />;
-    default:
-      return (
+  const renderStyle = (targetHash) =>
+    hash === targetHash ? { display: 'block' } : { display: 'none' };
+
+  return (
+    <>
+      <div style={renderStyle("#upload")}>
+        <UploadReport onAnalysisComplete={() => {}} />
+      </div>
+      <div style={renderStyle("#summary")}>
+        <FaultSummary />
+      </div>
+      <div style={renderStyle("#trend")}>
+        <FaultTrends />
+      </div>
+      <div style={renderStyle("#scheduler")}>
+        <Scheduler />
+      </div>
+      <div style={renderStyle("#heatmap")}>
+        <SensorHeatmap />
+      </div>
+      <div style={renderStyle("#simulator")}>
+        <WhatIfSimulator />
+      </div>
+      {/* Optional: fallback if no hash matches */}
+      {![ "#upload", "#summary", "#trend", "#scheduler", "#heatmap", "#simulator" ].includes(hash) && (
         <div style={{ textAlign: 'center', margin: '2rem 0' }}>
           <button className="button" onClick={() => setShowSample(true)}>
             📂 View Sample Format Page
           </button>
         </div>
-      );
-  }
+      )}
+    </>
+  );
 };
 
 export default Home;

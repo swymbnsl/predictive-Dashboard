@@ -1,0 +1,73 @@
+/* .schedulerSection {
+  padding: 40px 20px;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333366;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.reportBox {
+  margin-top: 20px;
+}
+
+.successMsg {
+  color: green;
+  font-size: 18px;
+  text-align: center;
+}
+
+.infoMsg {
+  font-size: 16px;
+  color: #555;
+}
+
+.taskSection,
+.dateSection {
+  margin-top: 20px;
+}
+
+.subheading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #222;
+}
+
+.list {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.buttonWrapper {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.exportBtn {
+  background-color: #333366;
+  color: white;
+  padding: 10px 20px;
+  font-size: 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.exportBtn:hover {
+  background-color: #222255;
+} */

@@ -1,202 +1,243 @@
-.uploadContainer {
+/* Layout */
+.pageBg {
+  min-height: 100vh;
+  background: #f7f9fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: rgba(24,28,42,0.18);
+  border: 1.5px solid #00eaff;
+  border-radius: 16px;
+  width: 100%;
+  min-height: 80vh;
+  padding: 2.5rem 2.5rem 2.2rem 2.5rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  border-radius: 20px;
-  color: var(--color-light);
-  width: 100%;
-  max-width: 780px;
-  text-align: center;
-  animation: fadeIn 0.8s ease-in-out;
-  padding: 2.5rem 2rem;
-  gap: 2.5rem;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
+  align-items: flex-start;
+  color: #f3f6fa;
 }
 
-.uploadTitle {
-  font-size: 2.5rem;
+.headerSection {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-size: 2.2rem;
   font-weight: 800;
-  margin: 0;
-  color: var(--color-primary);
-  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.6);
+  color: #00eaff;
+  margin: 0 0 0.2rem 0;
+  letter-spacing: 0.01em;
+  text-align: Center;
 }
 
-.uploadSubtitle {
-  font-size: 1.25rem;
-  color: var(--color-secondary);
-  margin: 0;
-  text-shadow: 0 0 8px rgba(0, 234, 255, 0.2);
+.subtitle {
+  font-size: 1.15rem;
+  color: #b6eaff;
+  margin: 0 0 0.5rem 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-align: center;
 }
 
-.uploadBox {
+.divider {
+  width: 100%;
+  border: none;
+  border-top: 2px solid #00eaff;
+  margin: 1.2rem 0 1.2rem 0;
+}
+
+.form {
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f3f6fa;
+  margin-bottom: 0.2rem;
+  text-align: left;
+}
+
+.inputRow {
+  display: flex;
   align-items: center;
   width: 100%;
-}
-
-.inputGroup {
-  display: flex;
-  align-items: center;
-  background: var(--color-border);
-  border: 1.5px solid var(--color-secondary);
-  border-radius: var(--radius-md);
-  padding: 0.4rem 0.6rem;
-  width: 100%;
-  max-width: 500px;
-  gap: 0.6rem;
-}
-
-.inputGroup:hover {
-  border-color: var(--color-accent);
+  gap: 0.7rem;
 }
 
 .fileInput {
   flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--color-light);
+  background: #181c2a;
+  border: 1.5px solid #2a2e4a;
+  color: #f3f6fa;
   font-size: 1rem;
-  cursor: pointer;
-  padding: 0.45rem 0;
-}
-
-
-.fileInput::file-selector-button {
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  padding: 0.55rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.uploadButton {
-  background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  font-weight: 700;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.uploadButton:hover {
-  background: linear-gradient(90deg, var(--color-primary), #ffec80);
-  color: var(--color-dark-bg);
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: var(--shadow-gold);
-}
-
-.fileName {
-  font-weight: 500;
-  color: #abf;
-}
-
-.downloadSample {
-  font-size: 1rem;
-  color: var(--color-light);
-}
-
-.sampleButton {
-  background: transparent;
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent);
-  padding: 0.55rem 1.5rem;
-  font-weight: 900;
   border-radius: 0.7rem;
-  margin-left: 0.5rem;
+  padding: 0.7rem 1rem;
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: border 0.2s;
+  margin-right: 0.7rem;
 }
-
-.sampleButton:hover {
-  background: var(--color-accent);
-  color: var(--color-dark-bg);
+.fileInput:focus {
+  outline: 2px solid #00eaff;
+  border-color: #00eaff;
 }
-
-.processing {
-  font-size: 1.1rem;
-  color: var(--color-primary);
-  font-weight: 600;
-  text-align: center;
-}
-
-.loader {
-  margin-top: 1rem;
-  width: 90%;
-  max-width: 380px;
-  height: 12px;
-  border-radius: 20px;
-  background: #444;
-  overflow: hidden;
-}
-
-.progress {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
-  animation: loading 2s infinite ease-in-out;
-}
-
-@keyframes loading {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0); }
-  100% { transform: translateX(100%); }
-}
-
-.result {
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 2rem;
-  color: var(--color-secondary);
-}
-
-.buttonGroup {
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
-}
-
-.buttonPrimary {
-  background: var(--color-secondary);
-  color: white;
-  padding: 0.7rem 1.8rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: 0.3s;
+.fileInput::file-selector-button {
+  background: #00eaff;
+  color: #181c2a;
   border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.fileInput::file-selector-button:hover,
+.fileInput::file-selector-button:focus {
+  background: #ffd700;
+  color: #181c2a;
 }
 
-.buttonPrimary:hover {
-  background: #1db9ff;
+.primaryBtn {
+  background: #00eaff;
+  color: #181c2a;
+  border: none;
+  padding: 0.7rem 2.2rem;
+  font-weight: 700;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-size: 1.08rem;
+}
+.primaryBtn:hover {
+  background-color: #ffd700;
   transform: translateY(-1px);
 }
 
-.buttonSecondary {
-  background: transparent;
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  padding: 0.7rem 1.8rem;
-  border-radius: 12px;
-  font-weight: 500;
-  font-size: 1rem;
+.primaryBtn:disabled {
+  background-color:#00eaff;
+  cursor: default;
+  pointer-events: none;
+}
+.secondaryBtn {
+  background: #232946;
+  color: #00eaff;
+  border: 2px solid #00eaff;
+  padding: 0.7rem 2.2rem;
+  font-weight: 700;
+  border-radius: 0.7rem;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-size: 1.08rem;
+  margin-top: 0.7rem;
+}
+.secondaryBtn:focus {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+.secondaryBtn:hover,
+.secondaryBtn:focus-visible {
+  background: #00eaff;
+  color: #181c2a;
+  border-color: #00eaff;
 }
 
-.buttonSecondary:hover {
-  background: var(--color-border);
-  color: white;
+.fileNameInline {
+  color: #ffd700;
+  font-weight: 500;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+  padding-left: 0.5rem;
+}
+
+
+.progressSection {
+  width: 100%;
+  margin: 1.2rem 0 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.progressBarBg {
+  width: 100%;
+  max-width: 320px;
+  height: 10px;
+  border-radius: 6px;
+  background: #2a2e4a;
+  overflow: hidden;
+  margin-bottom: 0.7rem;
+}
+.progressBar {
+  height: 100%;
+  width: 100%;
+  background: #00eaff;
+  animation: loading 2s infinite linear;
+}
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.statusMsg {
+  font-size: 1.08rem;
+  color: #00eaff;
+  font-weight: 600;
+  text-align: center;
+}
+
+.resultSection {
+  width: 100%;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.resultTitle {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 0.2rem;
+}
+.resultSubtitle {
+  font-size: 1rem;
+  color: #f3f6fa;
+  margin-bottom: 1.1rem;
+}
+.resultActions {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .card {
+    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    max-width: 99vw;
+  }
+  .title {
+    font-size: 1.3rem;
+  }
+  .subtitle {
+    font-size: 0.98rem;
+  }
+  .inputRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .resultActions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
 }
