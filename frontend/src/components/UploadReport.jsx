@@ -17,6 +17,10 @@ const UploadReport = ({ onAnalysisComplete }) => {
     setAnalyzing(false);
     setDone(false);
 
+    // ✅ Clear old localStorage before upload
+    localStorage.removeItem('fault_summary');
+    localStorage.removeItem('fault_trend_data');
+
     const formData = new FormData();
     formData.append('file', fileSelected);
 
@@ -32,7 +36,7 @@ const UploadReport = ({ onAnalysisComplete }) => {
         const fileUrl = `http://localhost:5000${result.download_url}`;
         setReportUrl(fileUrl);
 
-        // ✅ Store full summary object to match FaultSummary.jsx expectation
+        // ✅ Save summary
         if (result.summary && result.total_records !== undefined) {
           const fullSummary = {
             total_records: result.total_records,
@@ -41,11 +45,32 @@ const UploadReport = ({ onAnalysisComplete }) => {
           localStorage.setItem('fault_summary', JSON.stringify(fullSummary));
         }
 
-        // Simulate loading/animation transitions
+        // ✅ Save trend data
+        let trendRaw = result.trend_data || result.rows;
+        if (trendRaw) {
+          const cleanedTrendData = trendRaw
+            .map(item => {
+              const ts = item.Timestamp || item.timestamp;
+              const fault = item.Fault_Type || item.Fault || item.Predicted_Label;
+              if (!ts || !fault) return null;
+              return {
+                Timestamp: new Date(ts).toISOString(),
+                Fault_Type: fault,
+              };
+            })
+            .filter(Boolean);
+
+          if (cleanedTrendData.length) {
+            localStorage.setItem('fault_trend_data', JSON.stringify(cleanedTrendData));
+            // ✅ Trigger manual storage event to force UI refresh
+            window.dispatchEvent(new Event('storage'));
+          }
+        }
+
+        // Simulated transition
         setTimeout(() => {
           setUploading(false);
           setAnalyzing(true);
-
           setTimeout(() => {
             setAnalyzing(false);
             setDone(true);
@@ -102,6 +127,9 @@ const UploadReport = ({ onAnalysisComplete }) => {
     setFileName('');
     setFileSelected(null);
     fileInput.current.value = '';
+    localStorage.removeItem('fault_summary');
+    localStorage.removeItem('fault_trend_data');
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleFileChange = () => {
@@ -140,7 +168,6 @@ const UploadReport = ({ onAnalysisComplete }) => {
             className={styles.fileInput}
             aria-label="Choose CSV file"
           />
-
           <button
             type="submit"
             className={styles.primaryBtn}
