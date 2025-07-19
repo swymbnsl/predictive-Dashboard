@@ -4,6 +4,8 @@ const MAINTENANCE_SUGGESTIONS = {
   "Bearing Fault": "Inspect and lubricate bearings",
   "Misalignment": "Realign motor-pump coupling",
   "Imbalance": "Recalibrate impeller",
+  "Cavitation": "Check for pump cavitation and inspect impeller",
+  "Normal": "No action needed, system normal"
 };
 
 const FaultSummary = () => {
@@ -35,7 +37,11 @@ const FaultSummary = () => {
     return (
       <section className="section" id="summary">
         <h2>Fault Summary Report</h2>
-        <p>No prediction summary found. Please upload a file first.</p>
+        <div className="flex flex-col items-center justify-center min-h-[200px] p-8 bg-white/80 rounded-xl shadow-lg border border-blue-100">
+          <span className="text-5xl mb-4">📂</span>
+          <p className="text-lg text-gray-500 font-semibold mb-2">No summary to display</p>
+          <p className="text-gray-400">Please upload and analyze a file to see the summary report.</p>
+        </div>
       </section>
     );
   }
@@ -47,6 +53,8 @@ const FaultSummary = () => {
     window.location.hash = "#scheduler";
   };
 
+  const ALL_FAULTS = ['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'];
+
   return (
     <section className="section" id="summary">
       <div ref={reportRef} style={{ flex: 1 }}>
@@ -57,9 +65,9 @@ const FaultSummary = () => {
 
         <div className="processing">📊 Faults Detected:</div>
         <ul>
-          {Object.entries(fault_counts).map(([fault, count]) => (
+          {ALL_FAULTS.map(fault => (
             <li key={fault}>
-              {fault} → {count} instance{count !== 1 ? "s" : ""}
+              {fault} → {fault_counts[fault] || 0} instance{(fault_counts[fault] || 0) !== 1 ? "s" : ""}
             </li>
           ))}
         </ul>
@@ -68,11 +76,9 @@ const FaultSummary = () => {
 
         <div className="processing">🛠 Maintenance Suggestions:</div>
         <ul>
-          {Object.entries(MAINTENANCE_SUGGESTIONS).map(([fault, suggestion]) =>
-            fault_counts[fault] > 0 ? (
-              <li key={fault}>
-                ✔ {fault} → {suggestion}
-              </li>
+          {ALL_FAULTS.filter(fault => fault_counts[fault] > 0).map(fault =>
+            MAINTENANCE_SUGGESTIONS[fault] ? (
+              <li key={fault}>✔ {fault} → {MAINTENANCE_SUGGESTIONS[fault]}</li>
             ) : null
           )}
           {fault_counts["Normal"] === total_records && (

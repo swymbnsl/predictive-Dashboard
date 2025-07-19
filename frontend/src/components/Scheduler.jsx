@@ -19,13 +19,26 @@ const Scheduler = () => {
   const reportRef = useRef();
   const hiddenReportRef = useRef();
 
-  const plannedTasks = Object.entries(faultCounts)
-    .filter(([fault, count]) => count > 0 && PRIORITY_MAP[fault])
-    .map(([fault, count]) => {
-      const { task, priority, daysFromNow } = PRIORITY_MAP[fault];
-      const date = generateFutureDate(daysFromNow);
-      return { fault, task, priority, count, date };
-    });
+  const ALL_FAULTS = ['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'];
+  const plannedTasks = ALL_FAULTS.map(fault => {
+    const count = faultCounts[fault] || 0;
+    if (fault === 'Normal') return null; // Never schedule for Normal
+    if (count > 0) {
+      if (PRIORITY_MAP[fault]) {
+        const { task, priority, daysFromNow } = PRIORITY_MAP[fault];
+        const date = generateFutureDate(daysFromNow);
+        return { fault, task, priority, count, date };
+      } else {
+        // Schedule for all faults, even if not in PRIORITY_MAP
+        const task = 'General inspection';
+        const priority = 'Low';
+        const daysFromNow = 10;
+        const date = generateFutureDate(daysFromNow);
+        return { fault, task, priority, count, date };
+      }
+    }
+    return null;
+  }).filter(Boolean);
 
   const exportPDF = () => {
     const input = hiddenReportRef.current;
@@ -51,16 +64,18 @@ const Scheduler = () => {
           <div className="divider" />
 
           {plannedTasks.length === 0 ? (
-            <p className="after-analysis">✅ All systems normal. No maintenance scheduled.</p>
+            <div className="flex flex-col items-center justify-center min-h-[200px] p-8 bg-white/80 rounded-xl shadow-lg border border-blue-100">
+              <span className="text-5xl mb-4">📂</span>
+              <p className="text-lg text-gray-500 font-semibold mb-2">No schedule to display</p>
+              <p className="text-gray-400">Please upload and analyze a file to see the maintenance schedule.</p>
+            </div>
           ) : (
             <>
               <div className="processing">📊 Maintenance Plan Based on Fault Frequency:</div>
-
               <ul>
                 {plannedTasks.map(({ fault, task, priority, count }) => (
                   <li key={fault}>
-                    <strong>{task}</strong> → <span>{priority}</span>{" "}
-                    ({count} {fault}{count > 1 ? "s" : ""} today)
+                    <strong>{task}</strong> → <span>{priority}</span> ({count} {fault}{count !== 1 ? "s" : ""} today)
                   </li>
                 ))}
               </ul>
@@ -68,7 +83,6 @@ const Scheduler = () => {
               <div className="divider" />
 
               <div className="processing">📅 Upcoming Maintenance Dates:</div>
-
               <ul>
                 {plannedTasks.map(({ fault, date }) => (
                   <li key={fault}>

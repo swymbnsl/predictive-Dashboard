@@ -19,7 +19,17 @@ const UploadReport = ({ onAnalysisComplete }) => {
 
     // ✅ Clear old localStorage before upload
     localStorage.removeItem('fault_summary');
+    localStorage.removeItem('prediction_summary');
+    localStorage.removeItem('fault_counts');
     localStorage.removeItem('fault_trend_data');
+    window.dispatchEvent(new Event('storage'));
+
+    // ✅ Reset backend prediction file
+    try {
+      await fetch('http://localhost:5000/reset', { method: 'POST' });
+    } catch (err) {
+      console.warn('Could not reset backend state:', err);
+    }
 
     const formData = new FormData();
     formData.append('file', fileSelected);
@@ -36,13 +46,16 @@ const UploadReport = ({ onAnalysisComplete }) => {
         const fileUrl = `http://localhost:5000${result.download_url}`;
         setReportUrl(fileUrl);
 
-        // ✅ Save summary
+        // ✅ Save summary (for FaultSummary)
         if (result.summary && result.total_records !== undefined) {
           const fullSummary = {
             total_records: result.total_records,
             fault_counts: result.summary,
           };
           localStorage.setItem('fault_summary', JSON.stringify(fullSummary));
+          localStorage.setItem('prediction_summary', JSON.stringify(fullSummary)); // For FaultSummary.jsx
+          localStorage.setItem('fault_counts', JSON.stringify(result.summary)); // For Scheduler.jsx
+          window.dispatchEvent(new Event('storage'));
         }
 
         // ✅ Save trend data

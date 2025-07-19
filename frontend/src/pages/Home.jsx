@@ -4,7 +4,6 @@ import SampleFormat from '../components/SampleFormat';
 import FaultSummary from '../components/FaultSummary';
 import FaultTrends from '../components/FaultTrends';
 import Scheduler from '../components/Scheduler';
-import SensorHeatmap from '../components/SensorHeatmap';
 import WhatIfSimulator from '../components/WhatIfSimulator';
 
 const Home = () => {
@@ -38,14 +37,11 @@ const Home = () => {
       <div style={renderStyle("#scheduler")}>
         <Scheduler />
       </div>
-      <div style={renderStyle("#heatmap")}>
-        <SensorHeatmap />
-      </div>
       <div style={renderStyle("#simulator")}>
         <WhatIfSimulator />
       </div>
       {/* Optional: fallback if no hash matches */}
-      {![ "#upload", "#summary", "#trend", "#scheduler", "#heatmap", "#simulator" ].includes(hash) && (
+      {![ "#upload", "#summary", "#trend", "#scheduler", "#simulator" ].includes(hash) && (
         <div style={{ textAlign: 'center', margin: '2rem 0' }}>
           <button className="button" onClick={() => setShowSample(true)}>
             📂 View Sample Format Page

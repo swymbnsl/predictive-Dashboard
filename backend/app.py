@@ -22,31 +22,22 @@ ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load model, scaler, features
+# Load model, scaler, and feature list
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 with open(FEATURES_PATH, 'rb') as f:
     required_features = pickle.load(f)
 
-# Label encoder
+# Fault label encoder (ensure order matches training)
 le = LabelEncoder()
-fault_labels = ['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal']
-le.fit(fault_labels)
-print("Label encoding map:", dict(zip(le.classes_, le.transform(le.classes_))))
+le.fit(['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'])
 
-# Required base columns
 base_columns = [
-    'Rotational_Speed_RPM',
-    'Torque_Nm',
-    'Vibration_X_mm_s',
-    'Vibration_Y_mm_s',
-    'Vibration_Z_mm_s',
-    'Temperature_C',
-    'Pressure_bar',
-    'Flow_Rate_LPM'
+    'Rotational_Speed_RPM', 'Torque_Nm',
+    'Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s',
+    'Temperature_C', 'Pressure_bar', 'Flow_Rate_LPM'
 ]
 
-# Store last uploaded file path
 last_predicted_file = None
 
 @app.after_request
@@ -59,6 +50,14 @@ def add_header(response):
 @app.route('/')
 def home():
     return '✅ Predictive Maintenance API is running'
+
+@app.route('/reset', methods=['POST'])
+def reset_backend():
+    global last_predicted_file
+    if last_predicted_file and os.path.exists(last_predicted_file):
+        os.remove(last_predicted_file)
+    last_predicted_file = None
+    return jsonify({'message': 'Backend state reset.'}), 200
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -82,23 +81,19 @@ def predict():
         try:
             df = pd.read_csv(filepath)
 
-            # Parse Timestamp
             if 'Timestamp' in df.columns:
-                try:
-                    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
-                except Exception:
-                    return jsonify({'error': 'Invalid Timestamp format'}), 400
+                df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
             else:
                 df['Timestamp'] = pd.date_range(start='2025-01-01', periods=len(df), freq='H')
 
-            # Validate base columns
             missing_cols = [col for col in base_columns if col not in df.columns]
             if missing_cols:
                 return jsonify({'error': f'Missing required columns: {missing_cols}'}), 400
 
+            # Fill missing values like training
             df[base_columns] = df[base_columns].fillna(df[base_columns].mean())
 
-            # Feature engineering
+            # 🔧 Feature engineering
             df['Vibration_Mean'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].mean(axis=1)
             df['Vibration_Std'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].std(axis=1)
             df['Vibration_Range'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].max(axis=1) - \
@@ -107,42 +102,41 @@ def predict():
             df['Torque_RPM'] = df['Torque_Nm'] * df['Rotational_Speed_RPM']
             df['Temp_Pressure'] = df['Temperature_C'] * df['Pressure_bar']
 
+            # Handle any remaining NaN or inf
             df.replace([np.inf, -np.inf], np.nan, inplace=True)
             df.fillna(0, inplace=True)
 
-            # Final feature check
-            missing = list(set(required_features) - set(df.columns))
-            if missing:
-                return jsonify({'error': f'Missing engineered features: {missing}'}), 400
+            # Final feature selection
+            if not all(feat in df.columns for feat in required_features):
+                return jsonify({'error': f'Missing features: {set(required_features) - set(df.columns)}'}), 400
 
             X_input = df[required_features]
+            print('\n[DEBUG] Features sent to model:')
+            print(X_input.head())
             X_scaled = scaler.transform(X_input)
+            print('[DEBUG] Scaled features:')
+            print(X_scaled[:5])
             preds = model.predict(X_scaled)
-
+            print('[DEBUG] Model predictions:')
+            print(preds[:10])
             df['Fault_Type'] = le.inverse_transform(preds)
 
-            # Save prediction
+            # Save predicted file
             output_filename = f'predicted_{filename}'
             output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
             df.to_csv(output_path, index=False)
             last_predicted_file = output_path
 
-            # Summary
+            # Summary stats
             fault_counts = {k: int(v) for k, v in dict(Counter(df['Fault_Type'])).items()}
-            total_records = int(len(df))
-            unique_faults = list(map(str, df['Fault_Type'].unique()))
-
-            # Trend Data
-            trend_cols = ['Timestamp', 'Fault_Type', 'Torque_Nm', 'Vibration_Z_mm_s',
-                          'Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Temperature_C',
-                          'Pressure_bar', 'Flow_Rate_LPM', 'Rotational_Speed_RPM']
+            trend_cols = ['Timestamp', 'Fault_Type'] + base_columns
             trend_cols = [col for col in trend_cols if col in df.columns]
             trend_data = df[trend_cols].dropna().to_dict(orient='records')
 
             return jsonify({
                 'message': '✅ Prediction successful',
-                'total_records': total_records,
-                'unique_fault_types': unique_faults,
+                'total_records': len(df),
+                'unique_fault_types': list(df['Fault_Type'].unique()),
                 'summary': fault_counts,
                 'download_url': f'/download/{output_filename}',
                 'trend_data': trend_data
@@ -156,37 +150,21 @@ def predict():
 @app.route('/get_trend_data', methods=['GET'])
 def get_trend_data():
     global last_predicted_file
+    if not last_predicted_file or not os.path.exists(last_predicted_file):
+        return jsonify({'error': 'No recent prediction found'}), 404
 
-    try:
-        if not last_predicted_file or not os.path.exists(last_predicted_file):
-            return jsonify({'error': 'No recent predicted file found'}), 404
+    df = pd.read_csv(last_predicted_file)
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df = df.dropna(subset=['Timestamp'])
 
-        df = pd.read_csv(last_predicted_file)
+    trend_cols = ['Timestamp', 'Fault_Type'] + base_columns
+    trend_data = df[trend_cols].dropna().to_dict(orient='records')
 
-        if 'Timestamp' not in df.columns:
-            return jsonify({'error': 'Timestamp column missing'}), 400
-
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
-        df = df.dropna(subset=['Timestamp'])
-
-        trend_cols = ['Timestamp', 'Fault_Type', 'Torque_Nm', 'Vibration_Z_mm_s',
-                      'Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Temperature_C',
-                      'Pressure_bar', 'Flow_Rate_LPM', 'Rotational_Speed_RPM']
-        trend_cols = [col for col in trend_cols if col in df.columns]
-        df = df[trend_cols].dropna()
-
-        trend_data = df.to_dict(orient='records')
-        min_date = df['Timestamp'].min().isoformat()
-        max_date = df['Timestamp'].max().isoformat()
-
-        return jsonify({
-            'trend_data': trend_data,
-            'min_date': min_date,
-            'max_date': max_date
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify({
+        'trend_data': trend_data,
+        'min_date': df['Timestamp'].min().isoformat(),
+        'max_date': df['Timestamp'].max().isoformat()
+    })
 
 @app.route('/download/<filename>', methods=['GET'])
 def download(filename):

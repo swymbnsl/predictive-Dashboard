@@ -6,7 +6,6 @@ const navLinks = [
   { href: "#summary", label: "Summary" },
   { href: "#trend", label: "Trend" },
   { href: "#scheduler", label: "Scheduler" },
-  { href: "#heatmap", label: "Heatmap" },
   { href: "#simulator", label: "Simulator" },
 ];
 

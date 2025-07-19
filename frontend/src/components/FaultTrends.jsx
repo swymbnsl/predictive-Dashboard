@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -7,184 +7,408 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
+} from "recharts";
+import axios from "axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { FaRegCalendarAlt } from "react-icons/fa";
+import { LuDownload } from "react-icons/lu";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-const FaultTrends = () => {
-  const [trendData, setTrendData] = useState([]);
+const FaultTrend = () => {
+  const [rawData, setRawData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [interval, setInterval] = useState('Daily');
-  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [granularity, setGranularity] = useState("Hourly");
+  const [faultTypes, setFaultTypes] = useState([]);
+  const exportRef = React.useRef();
 
+  // Color maps
+  // Bright, glowing colors for web
+  const webColorMap = {
+    "Misalignment": "#ff4c4c",      // bright red
+    "Imbalance": "#1e90ff",        // bright blue
+    "Bearing Fault": "#a259ff",    // bright purple
+    "Cavitation": "#00e676",       // bright green
+    "Normal": "#ffd700",           // gold
+  };
+  // Dark, high-contrast colors for PDF
+  const pdfColorMap = {
+    "Misalignment": "#e74c3c",      // bright red
+    "Imbalance": "#2980b9",        // blue
+    "Bearing Fault": "#8e44ad",    // purple
+    "Cavitation": "#27ae60",       // green
+    "Normal": "#f1c40f",           // yellow
+  };
+  // Use webColorMap for web, pdfColorMap for PDF
+  const colorMap = webColorMap;
+
+  // Always use all faults in this order
+  const ALL_FAULTS = ['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'];
+
+  // useEffect: Fetch data and set calendar to min/max timestamp from input file
   useEffect(() => {
-    fetch('http://localhost:5000/get_trend_data', {
-      headers: { 'Cache-Control': 'no-store' },
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!Array.isArray(data)) return;
+    axios.get("http://127.0.0.1:5000/get_trend_data")
+      .then((res) => {
+        const data = res.data?.trend_data || [];
+        const parsed = data.map(d => ({
+          ...d,
+          timestamp: new Date(d.Timestamp), // Use 'Timestamp' from backend
+          fault: d.Fault_Type || "Unknown", // Map 'Fault_Type' to 'fault'
+        })).filter(d => !isNaN(d.timestamp));
 
-        const parsed = data
-          .filter(item => item.Timestamp)
-          .map(item => ({
-            ...item,
-            Timestamp: new Date(item.Timestamp),
-          }))
-          .sort((a, b) => a.Timestamp - b.Timestamp);
+        parsed.sort((a, b) => a.timestamp - b.timestamp);
 
-        setTrendData(parsed);
+        if (parsed.length === 0) return;
 
-        if (parsed.length) {
-          const minDate = parsed[0].Timestamp.toISOString().split('T')[0];
-          const maxDate = parsed[parsed.length - 1].Timestamp.toISOString().split('T')[0];
-          setStartDate(minDate);
-          setEndDate(maxDate);
-        }
+        const min = parsed[0].timestamp;
+        const max = parsed[parsed.length - 1].timestamp;
+
+        setRawData(parsed);
+        setStartDate(min); // Calendar defaults to min timestamp
+        setEndDate(max);   // Calendar defaults to max timestamp
+
+        // Only include faults that are present in the data
+        const presentFaults = Array.from(new Set(parsed.map(d => d.fault))).filter(f => f && f !== 'Unknown');
+        setFaultTypes(presentFaults);
+        console.log("[DEBUG] Parsed rawData:", parsed);
       })
-      .catch(err => {
-        console.error('Failed to fetch trend data:', err);
-        setTrendData([]);
-      });
+      .catch(err => console.error("Error loading trend data:", err));
   }, []);
 
+  // Update chart when data, date, or granularity changes
   useEffect(() => {
-    if (!trendData.length) return;
-
-    const filtered = trendData.filter((item) => {
-      const date = item.Timestamp;
-      return (
-        (!startDate || new Date(startDate) <= date) &&
-        (!endDate || date <= new Date(endDate))
-      );
-    });
-
+    if (!rawData.length || !startDate || !endDate) return;
+    console.log("[DEBUG] Filtering from", startDate, "to", endDate);
     const grouped = {};
-    filtered.forEach((item) => {
-      const ts = item.Timestamp;
-      let key = '';
 
-      if (interval === 'Hourly') {
-        key = ts.toISOString().slice(0, 13); // yyyy-mm-ddTHH
-      } else if (interval === 'Daily') {
-        key = ts.toISOString().slice(0, 10); // yyyy-mm-dd
-      } else if (interval === 'Weekly') {
-        const weekStart = new Date(ts);
-        weekStart.setDate(ts.getDate() - ts.getDay());
-        key = weekStart.toISOString().slice(0, 10);
-      }
+    rawData
+      .filter(d => d.timestamp >= startDate && d.timestamp <= endDate)
+      .forEach(d => {
+        const ts = new Date(d.timestamp);
+        const fault = d.fault || "Unknown";
 
-      if (!grouped[key]) {
-        grouped[key] = {
-          timestamp: key,
-          Torque_Nm: 0,
-          Vibration_Z_mm_s: 0,
-          Faults: [],
-          count: 0,
-        };
-      }
+        let key = "";
+        if (granularity === "Hourly") {
+          key = ts.toISOString().slice(0, 13); // yyyy-mm-ddTHH
+        } else if (granularity === "Daily") {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === "Weekly") {
+          const weekStart = new Date(ts);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          key = weekStart.toISOString().slice(0, 10);
+        }
 
-      grouped[key].Torque_Nm += item.Torque_Nm || 0;
-      grouped[key].Vibration_Z_mm_s += item.Vibration_Z_mm_s || 0;
-      grouped[key].Faults.push(item.Fault_Type);
-      grouped[key].count += 1;
+        if (!grouped[key]) grouped[key] = {};
+        if (!grouped[key][fault]) grouped[key][fault] = [];
+
+        grouped[key][fault].push(d);
+      });
+
+    const formatted = [];
+
+    Object.entries(grouped).forEach(([time, faults]) => {
+      const entry = { timestamp: time, detailsByFault: {} };
+
+      faultTypes.forEach(fault => {
+        if (faults[fault]) {
+          entry[fault] = faults[fault].length;
+          entry.detailsByFault[fault] = faults[fault][faults[fault].length - 1];
+        } else {
+          entry[fault] = 0;
+        }
+      });
+
+      formatted.push(entry);
     });
 
-    const finalData = Object.entries(grouped).map(([key, entry]) => ({
-      timestamp: key,
-      Torque_Nm: +(entry.Torque_Nm / entry.count).toFixed(2),
-      Vibration_Z_mm_s: +(entry.Vibration_Z_mm_s / entry.count).toFixed(2),
-      Fault_Type: mostFrequent(entry.Faults),
-    }));
+    formatted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    setFilteredData(formatted);
+    console.log("[DEBUG] Filtered chart data:", formatted);
+  }, [rawData, startDate, endDate, granularity, faultTypes]);
 
-    setFilteredData(finalData);
-  }, [trendData, startDate, endDate, interval]);
+  // Tooltip handler: show all fault parameters for hovered chart point below the chart
+  const handleHover = (payload) => {
+    const point = payload?.activePayload?.[0]?.payload;
+    if (!point) return setTooltipData(null);
 
-  const mostFrequent = (arr) => {
-    const freq = {};
-    let max = '';
-    let maxCount = 0;
-    arr.forEach(item => {
-      freq[item] = (freq[item] || 0) + 1;
-      if (freq[item] > maxCount) {
-        max = item;
-        maxCount = freq[item];
-      }
-    });
-    return max;
+    // Collect all details for all faults at this point
+    const allDetails = point.detailsByFault || {};
+    setTooltipData(Object.values(allDetails));
   };
 
+  // Assign colors to new faults
+  faultTypes.forEach(fault => {
+    if (!colorMap[fault]) {
+      colorMap[fault] = "#" + Math.floor(Math.random() * 16777215).toString(16);
+    }
+  });
+
+  // Calculate fault counts for summary
+  const faultCounts = React.useMemo(() => {
+    const counts = {};
+    filteredData.forEach(row => {
+      Object.keys(row).forEach(key => {
+        if (key !== 'timestamp' && key !== 'detailsByFault') {
+          counts[key] = (counts[key] || 0) + row[key];
+        }
+      });
+    });
+    return counts;
+  }, [filteredData]);
+
+  // PDF export function
+  const exportPDF = async () => {
+    const input = exportRef.current;
+    if (!input) return;
+    const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+    pdf.save('Fault_Trend_Report.pdf');
+  };
+
+  // Gorgeous date input for DatePicker
+  const DateInput = React.forwardRef(({ value, onClick, placeholder }, ref) => (
+    <button
+      type="button"
+      onClick={onClick}
+      ref={ref}
+      className="flex items-center gap-4 border border-blue-300 bg-gradient-to-br from-white via-blue-50 to-blue-100 rounded-full px-6 py-2 shadow-xl hover:shadow-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-300 transition-all duration-200 text-gray-900 font-bold min-w-[150px] text-lg outline-none transform hover:scale-105"
+      style={{ minWidth: 150, boxShadow: '0 6px 24px #b6eaff55' }}
+    >
+      <FaRegCalendarAlt className="text-blue-600 text-2xl drop-shadow" />
+      <span className={!value ? 'text-gray-400 font-normal' : ''}>{value || placeholder}</span>
+    </button>
+  ));
+
   return (
-    <section className="section" id="trend" style={{ minHeight: '400px' }}>
-      <h2>📈 Fault Trend Over Time</h2>
-      <p>🗓 View average Torque and Vibration Z over time:</p>
+    <section className="section" id="trend">
+      <h2 className="text-xl font-bold mb-2">📈 Fault Trend Over Time</h2>
+      <p className="text-sm text-gray-700 mb-4">🗓 View how different faults occurred over time:</p>
 
-      <div style={{ margin: '1rem 0' }}>
-        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        {' to '}
-        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        <select
-          style={{ marginLeft: 16 }}
-          value={interval}
-          onChange={(e) => setInterval(e.target.value)}
-        >
-          <option value="Hourly">Hourly</option>
-          <option value="Daily">Daily</option>
-          <option value="Weekly">Weekly</option>
-        </select>
-      </div>
+      {/* Empty state if no data */}
+      {rawData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-white/80 rounded-xl shadow-lg border border-blue-100">
+          <span className="text-5xl mb-4">📂</span>
+          <p className="text-lg text-gray-500 font-semibold mb-2">No data to display</p>
+          <p className="text-gray-400">Please upload and analyze a file to see the fault trend graph.</p>
+        </div>
+      ) : (
+        <>
+          {/* Controls Card */}
+          <div className="bg-white/80 rounded-xl shadow-lg p-5 flex flex-wrap gap-6 mb-6 items-end border border-blue-100 mt-8">
+            {/* Date Range Picker */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex items-end gap-0 bg-white/95 rounded-full px-2 py-2 shadow-2xl border-2 border-blue-200">
+                {/* Start Date */}
+                <div className="flex flex-col items-center px-6 py-2">
+                  <label className="font-bold text-blue-700 text-xs mb-1 tracking-wider uppercase" htmlFor="start-date">Start Date</label>
+                  <DatePicker
+                    id="start-date"
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    selectsStart
+                    startDate={startDate}
+                    endDate={endDate}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Start Date"
+                    className="hidden"
+                    isClearable
+                    calendarClassName="rounded-lg shadow-lg border border-blue-200"
+                    popperPlacement="bottom-start"
+                    customInput={<DateInput value={startDate ? startDate.toLocaleDateString() : ""} placeholder="Start Date" />}
+                  />
+                </div>
+                {/* Separator */}
+                <div className="flex flex-col items-center px-2">
+                  <span className="rounded-full bg-gradient-to-br from-blue-100 via-blue-200 to-blue-50 text-blue-700 font-extrabold text-base px-5 py-2 shadow border-2 border-blue-200" style={{ letterSpacing: 2, marginTop: 24, marginBottom: 8 }}>to</span>
+                </div>
+                {/* End Date */}
+                <div className="flex flex-col items-center px-6 py-2">
+                  <label className="font-bold text-blue-700 text-xs mb-1 tracking-wider uppercase" htmlFor="end-date">End Date</label>
+                  <DatePicker
+                    id="end-date"
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    selectsEnd
+                    startDate={startDate}
+                    endDate={endDate}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="End Date"
+                    className="hidden"
+                    isClearable
+                    calendarClassName="rounded-lg shadow-lg border border-blue-200"
+                    popperPlacement="bottom-end"
+                    customInput={<DateInput value={endDate ? endDate.toLocaleDateString() : ""} placeholder="End Date" />}
+                  />
+                </div>
+              </div>
+            </div>
+            {/* Granularity Selector */}
+            <div className="flex flex-col">
+              <label className="font-medium mb-1">⏳ Granularity</label>
+              <select
+                value={granularity}
+                onChange={(e) => setGranularity(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-gray-800 font-medium min-w-[140px]"
+              >
+                <option value="Hourly">Hourly</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+              </select>
+            </div>
+          </div>
 
-      <div style={{ minHeight: 300, height: '300px', width: '100%', background: '#fff', borderRadius: 8, padding: 8 }}>
-        {filteredData.length === 0 ? (
-          <p style={{ textAlign: 'center', paddingTop: 80 }}>
-            No trend data available for selected range.
-          </p>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={400}>
             <LineChart
               data={filteredData}
-              onMouseMove={(e) => {
-                if (e && e.activePayload) {
-                  setHoveredPoint(e.activePayload[0].payload);
-                }
-              }}
-              onMouseLeave={() => setHoveredPoint(null)}
+              margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
+              onMouseMove={handleHover}
+              onMouseLeave={() => setTooltipData(null)}
             >
               <XAxis dataKey="timestamp" />
               <YAxis />
-              <Tooltip
-                formatter={(value, name) => {
-                  if (name === 'Torque_Nm') return [`${value} Nm`, 'Torque'];
-                  if (name === 'Vibration_Z_mm_s') return [`${value} mm/s`, 'Vibration Z'];
-                  return value;
-                }}
-                labelFormatter={(label) => `🕒 ${label}`}
-              />
+              <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Torque_Nm" stroke="#8884d8" dot={false} />
-              <Line type="monotone" dataKey="Vibration_Z_mm_s" stroke="#82ca9d" dot={false} />
+              {faultTypes.map(fault => (
+                <Line
+                  key={fault}
+                  type="monotone"
+                  dataKey={fault}
+                  stroke={webColorMap[fault]}
+                  name={fault}
+                  dot={false}
+                  strokeWidth={2}
+                  filter="url(#glow)"
+                />
+              ))}
+              {/* SVG filter for glow effect */}
+              <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
             </LineChart>
           </ResponsiveContainer>
-        )}
-      </div>
 
-      {hoveredPoint && (
-        <div style={{ marginTop: '1rem', padding: '0.5rem', background: '#f6f6f6', borderRadius: '8px' }}>
-          <h4>🧾 Selected Point Details</h4>
-          <ul>
-            <li><strong>Time:</strong> {hoveredPoint.timestamp}</li>
-            <li><strong>Torque:</strong> {hoveredPoint.Torque_Nm} Nm</li>
-            <li><strong>Vibration Z:</strong> {hoveredPoint.Vibration_Z_mm_s} mm/s</li>
-            <li><strong>Most Frequent Fault:</strong> {hoveredPoint.Fault_Type || 'N/A'}</li>
-          </ul>
-        </div>
+          {tooltipData && tooltipData.length > 0 && (
+            <div className="mt-4 p-4 bg-gray-100 rounded shadow text-sm">
+              <h3 className="font-semibold text-lg">💡 Fault Details</h3>
+              {tooltipData.map((detail, idx) => (
+                <div key={idx} className="mb-2">
+                  <p><strong>Fault:</strong> {detail.fault}</p>
+                  <p><strong>Time:</strong> {new Date(detail.timestamp).toLocaleString()}</p>
+                  {Object.entries(detail).map(([key, val]) =>
+                    !["timestamp", "fault"].includes(key) ? (
+                      <p key={key}><strong>{key}:</strong> {val}</p>
+                    ) : null
+                  )}
+                  <hr />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Hidden export section for PDF */}
+          <section
+            ref={exportRef}
+            style={{
+              position: 'fixed',
+              top: '-9999px',
+              left: '-9999px',
+              width: '190mm',
+              minHeight: '280mm',
+              backgroundColor: '#fff',
+              color: '#181818', // dark text
+              fontFamily: 'Arial, sans-serif',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              padding: '30px 40px',
+              boxSizing: 'border-box',
+              border: '1px solid #222',
+              borderRadius: '8px',
+              zIndex: -1,
+              overflowWrap: 'break-word',
+            }}
+          >
+            <h2 style={{ fontWeight: '700', fontSize: '24px', marginBottom: '10px', letterSpacing: '0.03em' }}>
+              📈 Fault Trend Over Time
+            </h2>
+            <p style={{ fontSize: '16px', marginBottom: '20px' }}>
+              This report shows the trend of detected faults over time, color-coded by fault type.
+            </p>
+            <div style={{ marginBottom: '18px' }}>
+              <strong>Legend:</strong>
+              <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', margin: '10px 0 0 0', padding: 0, listStyle: 'none' }}>
+                {faultTypes.map(fault => (
+                  <li key={fault} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ display: 'inline-block', width: 18, height: 18, borderRadius: 4, background: pdfColorMap[fault], marginRight: 8, border: '1px solid #222' }}></span>
+                    <span style={{ color: '#181818', fontWeight: 700 }}>{fault}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={{ marginBottom: '18px' }}>
+              <strong>Fault Counts:</strong>
+              <ul style={{ margin: '10px 0 0 0', padding: 0, listStyle: 'none' }}>
+                {faultTypes.map(fault => (
+                  <li key={fault} style={{ color: '#181818', fontWeight: 600 }}>{fault}: {faultCounts[fault] || 0}</li>
+                ))}
+              </ul>
+            </div>
+            <div style={{ marginBottom: '24px', width: '100%', height: 350 }}>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart
+                  data={filteredData}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
+                >
+                  <XAxis dataKey="timestamp" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  {faultTypes.map(fault => (
+                    <Line
+                      key={fault}
+                      type="monotone"
+                      dataKey={fault}
+                      stroke={pdfColorMap[fault]}
+                      name={fault}
+                      dot={false}
+                      strokeWidth={2}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ fontSize: '13px', color: '#222', marginTop: 18 }}>
+              <em>Generated by Predictive Maintenance Dashboard</em>
+            </div>
+          </section>
+
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <button
+              className="button flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow"
+              onClick={exportPDF}
+            >
+              <LuDownload className="text-lg" />
+              Export PDF
+            </button>
+          </div>
+        </>
       )}
-
-      <button className="button" onClick={() => window.print()} style={{ marginTop: 16 }}>
-        ⬇ Export Graph Report (PDF)
-      </button>
     </section>
   );
 };
 
-export default FaultTrends;
+export default FaultTrend;
