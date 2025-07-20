@@ -23,7 +23,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Load model, scaler, and feature list
-model = joblib.load(MODEL_PATH)
+from xgboost import XGBClassifier
+
+model = XGBClassifier()
+model.load_model("models/xgb_model.json")  # Make sure this file exists (saved correctly earlier)
+
 scaler = joblib.load(SCALER_PATH)
 with open(FEATURES_PATH, 'rb') as f:
     required_features = pickle.load(f)
@@ -174,7 +178,10 @@ def predict_simulator():
 
         try:
             # Load simulator model and files
-            sim_model = joblib.load(SIM_MODEL_PATH)
+            from xgboost import XGBClassifier
+            sim_model = XGBClassifier()
+            sim_model.load_model("models/sim_model.json")  # ✅ Correct loader for XGBoost JSON
+
             sim_scaler = joblib.load(SIM_SCALER_PATH)
             with open(SIM_FEATURES_PATH, 'rb') as f:
                 sim_required_features = pickle.load(f)
@@ -284,8 +291,11 @@ def get_trend_data():
 def download(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
-if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     from waitress import serve
+#     serve(app, host="0.0.0.0", port=8000)
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
 
