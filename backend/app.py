@@ -29,8 +29,10 @@ with open(FEATURES_PATH, 'rb') as f:
     required_features = pickle.load(f)
 
 # Fault label encoder (ensure order matches training)
-le = LabelEncoder()
-le.fit(['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'])
+# le = LabelEncoder()
+# le.fit(['Bearing Fault', 'Cavitation', 'Imbalance', 'Misalignment', 'Normal'])
+with open('models/label_encoder.pkl', 'rb') as f:
+    le = pickle.load(f)
 
 base_columns = [
     'Rotational_Speed_RPM', 'Torque_Nm',
@@ -39,6 +41,12 @@ base_columns = [
 ]
 
 last_predicted_file = None
+
+# --- Simulator Model Files ---
+SIM_MODEL_PATH = 'models/sim_model.pkl'
+SIM_SCALER_PATH = 'models/sim_scaler.pkl'
+SIM_FEATURES_PATH = 'models/sim_features.pkl'
+SIM_LABEL_ENCODER_PATH = 'models/sim_label_encoder.pkl'
 
 @app.after_request
 def add_header(response):
@@ -111,6 +119,9 @@ def predict():
                 return jsonify({'error': f'Missing features: {set(required_features) - set(df.columns)}'}), 400
 
             X_input = df[required_features]
+            print('[DEBUG] Backend features:', list(X_input.columns))
+            print('[DEBUG] Model expects:', required_features)
+            X_input = X_input[required_features]  # Force correct order
             print('\n[DEBUG] Features sent to model:')
             print(X_input.head())
             X_scaled = scaler.transform(X_input)
@@ -139,6 +150,109 @@ def predict():
                 'unique_fault_types': list(df['Fault_Type'].unique()),
                 'summary': fault_counts,
                 'download_url': f'/download/{output_filename}',
+                'trend_data': trend_data
+            })
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    return jsonify({'error': 'Invalid file format'}), 400
+
+@app.route('/predict_simulator', methods=['POST'])
+def predict_simulator():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        try:
+            # Load simulator model and files
+            sim_model = joblib.load(SIM_MODEL_PATH)
+            sim_scaler = joblib.load(SIM_SCALER_PATH)
+            with open(SIM_FEATURES_PATH, 'rb') as f:
+                sim_required_features = pickle.load(f)
+            with open(SIM_LABEL_ENCODER_PATH, 'rb') as f:
+                sim_le = pickle.load(f)
+
+            df = pd.read_csv(filepath)
+
+            if 'Timestamp' in df.columns:
+                df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+            else:
+                df['Timestamp'] = pd.date_range(start='2025-01-01', periods=len(df), freq='H')
+
+            # Fill missing values
+            for col in sim_required_features:
+                if col not in df.columns:
+                    df[col] = df[col].mean() if col in df else 0
+            df[sim_required_features] = df[sim_required_features].fillna(df[sim_required_features].mean())
+
+            # Feature engineering (same as training)
+            if 'Vibration_Mean' in sim_required_features:
+                df['Vibration_Mean'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].mean(axis=1)
+            if 'Vibration_Std' in sim_required_features:
+                df['Vibration_Std'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].std(axis=1)
+            if 'Vibration_Range' in sim_required_features:
+                df['Vibration_Range'] = df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].max(axis=1) - \
+                                        df[['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s']].min(axis=1)
+            if 'Flow_to_Pressure' in sim_required_features:
+                df['Flow_to_Pressure'] = df['Flow_Rate_LPM'] / (df['Pressure_bar'] + 1e-3)
+            if 'Torque_RPM' in sim_required_features:
+                df['Torque_RPM'] = df['Torque_Nm'] * df['Rotational_Speed_RPM']
+            if 'Temp_Pressure' in sim_required_features:
+                df['Temp_Pressure'] = df['Temperature_C'] * df['Pressure_bar']
+
+            # Handle NaN/inf
+            df.replace([np.inf, -np.inf], np.nan, inplace=True)
+            df.fillna(0, inplace=True)
+
+            # Final feature selection
+            if not all(feat in df.columns for feat in sim_required_features):
+                return jsonify({'error': f'Missing features: {set(sim_required_features) - set(df.columns)}'}), 400
+
+            X_input = df[sim_required_features]
+            X_input = X_input[sim_required_features]
+            X_scaled = sim_scaler.transform(X_input)
+
+            faults = []
+            if df['Temperature_C'].iloc[0] > 80:
+                faults.append('Cavitation')
+            if df['Vibration_Z_mm_s'].iloc[0] > 3.5 or df['Vibration_X_mm_s'].iloc[0] > 3.5 or df['Vibration_Y_mm_s'].iloc[0] > 3.5:
+                faults.append('Imbalance')
+            if df['Pressure_bar'].iloc[0] > 8:
+                faults.append('Misalignment')
+            if df['Torque_Nm'].iloc[0] > 60:
+                faults.append('Bearing Fault')
+            if df['Rotational_Speed_RPM'].iloc[0] > 1800:
+                faults.append('Misalignment')
+            if df['Flow_Rate_LPM'].iloc[0] < 150:
+                faults.append('Cavitation')
+
+            if faults:
+                df['Fault_Type'] = ', '.join(sorted(set(faults)))
+            else:
+                preds = sim_model.predict(X_scaled)
+                df['Fault_Type'] = sim_le.inverse_transform(preds)
+
+            # Summary stats
+            from collections import Counter
+            fault_counts = {k: int(v) for k, v in dict(Counter(df['Fault_Type'])).items()}
+            trend_cols = ['Timestamp', 'Fault_Type'] + list(sim_required_features)
+            trend_cols = [col for col in trend_cols if col in df.columns]
+            trend_data = df[trend_cols].dropna().to_dict(orient='records')
+
+            return jsonify({
+                'message': '✅ Simulator Prediction successful',
+                'total_records': len(df),
+                'unique_fault_types': list(df['Fault_Type'].unique()),
+                'summary': fault_counts,
                 'trend_data': trend_data
             })
 

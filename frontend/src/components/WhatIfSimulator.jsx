@@ -73,13 +73,14 @@ ${row.join(',')}`;
     const formData = new FormData();
     formData.append('file', blob, 'simulator.csv');
     try {
-      const response = await fetch('http://localhost:5000/predict', {
+      const response = await fetch('http://localhost:5000/predict_simulator', {
         method: 'POST',
         body: formData,
       });
       const data = await response.json();
       if (data && data.trend_data && data.trend_data.length > 0) {
         setResult(data.trend_data[0]);
+        console.log('[DEBUG] Backend returned:', data.trend_data[0]);
         setHistory(prev => [data.trend_data[0], ...prev].slice(0, 5));
       } else {
         setResult({ error: 'No prediction returned.' });
@@ -112,242 +113,235 @@ ${row.join(',')}`;
   return (
     <section className="section flex justify-center" id="simulator">
       <div className="w-full max-w-6xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-4xl font-extrabold text-cyan-300 mb-12 flex items-center gap-3 justify-center tracking-tight">Predictive Maintenance Simulator</h2>
-        <div className="flex flex-col lg:flex-row gap-16 min-h-[800px]">
-          {/* Left: Sensor sliders */}
-          <div className="flex-1 flex flex-col gap-10 min-w-[340px] max-w-[440px] h-full">
-            {/* Vibration group */}
-            <div className="bg-white/90 rounded-2xl p-8 shadow-2xl border border-blue-100">
-              <div className="font-bold text-blue-700 mb-6 text-lg uppercase tracking-wider border-b pb-3">Vibration</div>
-              <div className="flex flex-col gap-6">
-                {['Vibration_X_mm_s', 'Vibration_Y_mm_s', 'Vibration_Z_mm_s'].map(key => (
-                  <div key={key} className="grid grid-cols-5 gap-x-6 items-center w-full">
-                    <label className="font-semibold text-base flex items-center gap-2">
-                      {SENSOR_INFO[key].label}
-                      <span className="text-gray-400 text-xs cursor-help" title={SENSOR_INFO[key].tip}>ⓘ</span>
-                    </label>
+        {/* Main Title */}
+        <h2 style={{
+          fontSize: "2.5rem",
+          fontWeight: "900",
+          color: "#14e0f9",
+          margin: "0 0 2rem 0"
+        }}>
+          Predictive Maintenance Simulator
+        </h2>
+        <div className="flex flex-col gap-16 min-h-[800px]">
+          {/* Sensor Panel as Grid */}
+          <div style={{
+            background: '#232946',
+            border: '1px solid #3b4252',
+            borderRadius: 8,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            padding: '1.2rem',
+            margin: '0 auto 1.5rem auto',
+            maxWidth: 900
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.7fr 2.2fr 0.9fr 1fr 1.2fr',
+              gap: '0.3rem 0.7rem',
+              alignItems: 'center',
+              marginBottom: '1rem',
+              color: '#7dd3fc',
+              fontWeight: 700,
+              fontSize: '1rem',
+              letterSpacing: '0.01em'
+            }}>
+              <div>Sensor</div>
+              <div>Control</div>
+              <div style={{textAlign:'center'}}>Value</div>
+              <div style={{textAlign:'center'}}>Status</div>
+              <div style={{textAlign:'right'}}>Normal Range</div>
+            </div>
+            {Object.keys(SENSOR_INFO).map((key, index) => {
+              const s = getStatus(key, inputs[key]);
+              const sliderColor = s.status === 'High' ? '#ef4444' : s.status === 'Low' ? '#eab308' : '#22c55e';
+              const { normal, label } = SENSOR_INFO[key];
+              return (
+                <div key={key} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.7fr 2.2fr 0.9fr 1fr 1.2fr',
+                  gap: '0.3rem 0.7rem',
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? '#232946' : '#181c2a',
+                  borderRadius: 6,
+                  marginBottom: 2,
+                  padding: '0.3rem 0.1rem',
+                  color: '#f4f4f8',
+                  fontWeight: 500,
+                  fontSize: '0.98rem'
+                }}>
+                  <div style={{fontWeight:600, fontSize:'0.98rem'}}>{label}</div>
+                  <div>
                     <input
                       type="range"
-                      min={SENSOR_INFO[key].normal[0] - 2}
-                      max={SENSOR_INFO[key].normal[1] + 2}
-                      step={0.1}
+                      min={normal[0] - (key.includes('Vibration') ? 2 : key.includes('Flow') ? 50 : key.includes('Speed') ? 200 : 20)}
+                      max={normal[1] + (key.includes('Vibration') ? 2 : key.includes('Flow') ? 50 : key.includes('Speed') ? 200 : 20)}
+                      step={key.includes('Vibration') ? 0.1 : key.includes('Speed') ? 10 : 1}
                       value={inputs[key]}
                       onChange={e => handleChange(key, Number(e.target.value))}
-                      className="accent-blue-500 w-full"
+                      style={{
+                        width: '100%',
+                        accentColor: sliderColor,
+                        height: '4px',
+                        margin: '0.2rem 0'
+                      }}
                     />
-                    <span className="text-blue-700 font-bold text-lg text-center">{inputs[key]}</span>
-                    {(() => { const s = getStatus(key, inputs[key]); return <span className={`font-semibold ${s.color} text-base text-center`}>{s.status}</span>; })()}
-                    <span className="text-xs text-gray-500 text-right">Normal: {SENSOR_INFO[key].normal[0]} - {SENSOR_INFO[key].normal[1]}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-            {/* Flow & Pressure group */}
-            <div className="bg-white/90 rounded-2xl p-8 shadow-2xl border border-blue-100">
-              <div className="font-bold text-blue-700 mb-6 text-lg uppercase tracking-wider border-b pb-3">Flow & Pressure</div>
-              <div className="flex flex-col gap-6">
-                {['Flow_Rate_LPM', 'Pressure_bar'].map(key => (
-                  <div key={key} className="grid grid-cols-5 gap-x-6 items-center w-full">
-                    <label className="font-semibold text-base flex items-center gap-2">
-                      {SENSOR_INFO[key].label}
-                      <span className="text-gray-400 text-xs cursor-help" title={SENSOR_INFO[key].tip}>ⓘ</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={SENSOR_INFO[key].normal[0] - 50}
-                      max={SENSOR_INFO[key].normal[1] + 50}
-                      step={1}
-                      value={inputs[key]}
-                      onChange={e => handleChange(key, Number(e.target.value))}
-                      className="accent-blue-500 w-full"
-                    />
-                    <span className="text-blue-700 font-bold text-lg text-center">{inputs[key]}</span>
-                    {(() => { const s = getStatus(key, inputs[key]); return <span className={`font-semibold ${s.color} text-base text-center`}>{s.status}</span>; })()}
-                    <span className="text-xs text-gray-500 text-right">Normal: {SENSOR_INFO[key].normal[0]} - {SENSOR_INFO[key].normal[1]}</span>
+                  <div style={{textAlign:'center', fontWeight:600, color:'#7dd3fc', fontSize:'1rem'}}>{inputs[key]}</div>
+                  <div style={{textAlign:'center'}}>
+                    <span style={{
+                      display:'inline-block',
+                      padding:'0.18rem 0.9rem',
+                      borderRadius: '999px',
+                      fontWeight:600,
+                      background: s.status === 'High' ? '#fee2e2' : s.status === 'Low' ? '#fef9c3' : '#dcfce7',
+                      color: s.status === 'High' ? '#b91c1c' : s.status === 'Low' ? '#b45309' : '#166534',
+                      fontSize:'0.97rem',
+                      minWidth: 60
+                    }}>{s.status}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-            {/* Temperature & Torque group */}
-            <div className="bg-white/90 rounded-2xl p-8 shadow-2xl border border-blue-100">
-              <div className="font-bold text-blue-700 mb-6 text-lg uppercase tracking-wider border-b pb-3">Temperature & Torque</div>
-              <div className="flex flex-col gap-6">
-                {['Temperature_C', 'Torque_Nm'].map(key => (
-                  <div key={key} className="grid grid-cols-5 gap-x-6 items-center w-full">
-                    <label className="font-semibold text-base flex items-center gap-2">
-                      {SENSOR_INFO[key].label}
-                      <span className="text-gray-400 text-xs cursor-help" title={SENSOR_INFO[key].tip}>ⓘ</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={SENSOR_INFO[key].normal[0] - 20}
-                      max={SENSOR_INFO[key].normal[1] + 20}
-                      step={1}
-                      value={inputs[key]}
-                      onChange={e => handleChange(key, Number(e.target.value))}
-                      className="accent-blue-500 w-full"
-                    />
-                    <span className="text-blue-700 font-bold text-lg text-center">{inputs[key]}</span>
-                    {(() => { const s = getStatus(key, inputs[key]); return <span className={`font-semibold ${s.color} text-base text-center`}>{s.status}</span>; })()}
-                    <span className="text-xs text-gray-500 text-right">Normal: {SENSOR_INFO[key].normal[0]} - {SENSOR_INFO[key].normal[1]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Speed group */}
-            <div className="bg-white/90 rounded-2xl p-8 shadow-2xl border border-blue-100">
-              <div className="font-bold text-blue-700 mb-6 text-lg uppercase tracking-wider border-b pb-3">Speed</div>
-              <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-5 gap-x-6 items-center w-full">
-                  <label className="font-semibold text-base flex items-center gap-2">
-                    {SENSOR_INFO['Rotational_Speed_RPM'].label}
-                    <span className="text-gray-400 text-xs cursor-help" title={SENSOR_INFO['Rotational_Speed_RPM'].tip}>ⓘ</span>
-                  </label>
-                  <input
-                    type="range"
-                    min={SENSOR_INFO['Rotational_Speed_RPM'].normal[0] - 200}
-                    max={SENSOR_INFO['Rotational_Speed_RPM'].normal[1] + 200}
-                    step={10}
-                    value={inputs['Rotational_Speed_RPM']}
-                    onChange={e => handleChange('Rotational_Speed_RPM', Number(e.target.value))}
-                    className="accent-blue-500 w-full"
-                  />
-                  <span className="text-blue-700 font-bold text-lg text-center">{inputs['Rotational_Speed_RPM']}</span>
-                  {(() => { const s = getStatus('Rotational_Speed_RPM', inputs['Rotational_Speed_RPM']); return <span className={`font-semibold ${s.color} text-base text-center`}>{s.status}</span>; })()}
-                  <span className="text-xs text-gray-500 text-right">Normal: {SENSOR_INFO['Rotational_Speed_RPM'].normal[0]} - {SENSOR_INFO['Rotational_Speed_RPM'].normal[1]}</span>
+                  <div style={{textAlign:'right', color:'#bae6fd', fontSize:'0.95rem'}}>{normal[0]} - {normal[1]}</div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-          {/* Vertical divider for desktop */}
-          <div className="hidden lg:block w-[2px] bg-gradient-to-b from-cyan-200 via-cyan-400 to-cyan-200 mx-8 rounded-full"></div>
-          {/* Right: What-if, prediction, recommendation, history */}
-          <div className="flex-[1.3] flex flex-col bg-white/95 rounded-2xl p-12 shadow-2xl border border-blue-100 min-h-[800px] min-w-[480px] max-w-[1100px] h-full justify-between">
-            <div className="flex flex-col gap-12 flex-grow">
-              {/* Summary card */}
-              <div className="flex flex-col items-center mb-2">
-                <div className="w-full bg-blue-50 rounded-xl shadow p-6 flex flex-col items-center border border-blue-200">
-                  <div className="text-xl font-bold text-blue-700 mb-2">Current Prediction</div>
-                  <div className="text-3xl font-extrabold text-blue-900 mb-2">{result && !result.error ? result.Fault_Type : '—'}</div>
-                  <div className="flex gap-8 text-base text-gray-700 mt-2">
-                    <span>Sensors Normal: {Object.keys(SENSOR_INFO).filter(key => {
-                      const val = inputs[key];
-                      const { normal } = SENSOR_INFO[key];
-                      return val >= normal[0] && val <= normal[1];
-                    }).length}/{Object.keys(SENSOR_INFO).length}</span>
-                    <span>Last Simulated: {history[0] ? new Date(history[0].Timestamp || Date.now()).toLocaleTimeString() : '—'}</span>
+          
+          {/* Prediction Results - show below sensor panels */}
+          {result && (
+            <div style={{ width: '100%', maxWidth: 900, margin: '2rem auto 0 auto' }}>
+              <div style={{
+                background: '#232946',
+                border: '1px solid #3b4252',
+                borderRadius: 12,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                padding: '2rem',
+                marginBottom: '2rem',
+                color: '#f4f4f8'
+              }}>
+                {result.error ? (
+                  <div style={{ color: '#f87171', fontWeight: 700, fontSize: '1.2rem', textAlign: 'center', background: '#2d2e4a', borderRadius: 8, padding: '1.5rem', border: '1px solid #f87171' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>⚠️</div>
+                    {result.error}
                   </div>
-                </div>
-              </div>
-              <div>
-                <div className="mb-6 font-bold text-2xl text-blue-700 border-b pb-3">What if (Sensor Status)</div>
-                <div className="flex flex-col gap-3 mb-10">
-                  {Object.keys(SENSOR_INFO).map(key => {
-                    const val = inputs[key];
-                    const { normal, label } = SENSOR_INFO[key];
-                    if (val < normal[0]) return <span key={key} className="px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-base w-full">{label}: Low</span>;
-                    if (val > normal[1]) return <span key={key} className="px-4 py-2 rounded-full bg-red-100 text-red-800 font-semibold text-base w-full">{label}: High</span>;
-                    return <span key={key} className="px-4 py-2 rounded-full bg-green-100 text-green-800 font-semibold text-base w-full">{label}: Normal</span>;
-                  })}
-                </div>
-              </div>
-              <div>
-                <div className="mb-4 font-bold text-2xl text-blue-700 mt-2 border-b pb-3">Model predicts</div>
-                <ul className="mb-6 ml-2 text-lg list-disc list-inside">
-                  {result && !result.error ? (
-                    <li>Predicted Fault: <b>{result.Fault_Type}</b></li>
-                  ) : (
-                    <li>Adjust values and click Simulate Prediction</li>
-                  )}
-                </ul>
-                <div className="mb-4 font-bold text-2xl text-blue-700 border-b pb-3">Recommended</div>
-                <ul className="ml-2 text-lg">
-                  {result && !result.error ? (
-                    <li>→ {FAULT_RECOMMENDATIONS[result.Fault_Type] || 'Inspect and maintain as per fault type.'}</li>
-                  ) : (
-                    <li>→ Adjust values and simulate to get recommendations</li>
-                  )}
-                </ul>
-              </div>
-              {/* Prediction result */}
-              {result && (
-                <div className="mt-2 p-6 bg-white/90 rounded shadow text-gray-900">
-                  {result.error ? (
-                    <div className="text-red-600 font-bold text-lg">{result.error}</div>
-                  ) : (
-                    <>
-                      <div className="text-xl font-bold mb-3">Predicted Fault: <span className="text-blue-700">{result.Fault_Type}</span></div>
-                      <div className="mb-2">Torque: <b>{result.Torque_Nm}</b> Nm</div>
-                      <div className="mb-2">Vibration Z: <b>{result.Vibration_Z_mm_s}</b> mm/s</div>
-                      <div className="mb-2">Temperature: <b>{result.Temperature_C}</b> °C</div>
-                      <div className="mb-2">Pressure: <b>{result.Pressure_bar}</b> bar</div>
-                      <div className="mb-2">Flow Rate: <b>{result.Flow_Rate_LPM}</b> LPM</div>
-                      {/* Contributing factors */}
-                      {getContributing(result).length > 0 && (
-                        <div className="mt-3 text-yellow-700 font-semibold">
-                          Contributing Factors: {getContributing(result).join(', ')}
+                ) : (
+                  <>
+                    <h2 style={{ fontSize: '1.7rem', fontWeight: 700, color: '#7dd3fc', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      🎯 Prediction Results
+                    </h2>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f4f4f8', marginBottom: '1.5rem', textAlign: 'center' }}>
+                      {result.Fault_Type}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem' }}>
+                      {/* Summary Card */}
+                      <div style={{ flex: 1, minWidth: 260 }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#38bdf8', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          📌 Current Prediction
+                        </h3>
+                        <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f4f4f8', marginBottom: 10 }}>{result.Fault_Type}</div>
+                        <div style={{ fontSize: '1rem', color: '#bae6fd', marginBottom: 4 }}>
+                          Sensors Normal: {Object.keys(SENSOR_INFO).filter(key => {
+                            const val = inputs[key];
+                            const { normal } = SENSOR_INFO[key];
+                            return val >= normal[0] && val <= normal[1];
+                          }).length}/{Object.keys(SENSOR_INFO).length}
                         </div>
-                      )}
-                      <div className="mt-3 text-green-700 font-semibold">
-                        Recommendation: {FAULT_RECOMMENDATIONS[result.Fault_Type] || 'Inspect and maintain as per fault type.'}
+                        <div style={{ fontSize: '1rem', color: '#bae6fd' }}>
+                          Last: {new Date().toLocaleTimeString()}
+                        </div>
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-              {/* History */}
-              {history.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="font-bold text-blue-700 mb-4 border-b pb-3 text-xl">Simulation History</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-base bg-blue-50 rounded-xl shadow border border-blue-200">
-                      <thead>
-                        <tr className="bg-blue-100 text-blue-900">
-                          <th className="p-3">Fault</th>
-                          <th>Torque</th>
-                          <th>Vib Z</th>
-                          <th>Temp</th>
-                          <th>Pressure</th>
-                          <th>Flow</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {history.map((h, i) => (
-                          <tr key={i} className="text-blue-900">
-                            <td className="font-bold text-blue-700">{h.Fault_Type}</td>
-                            <td>{h.Torque_Nm}</td>
-                            <td>{h.Vibration_Z_mm_s}</td>
-                            <td>{h.Temperature_C}</td>
-                            <td>{h.Pressure_bar}</td>
-                            <td>{h.Flow_Rate_LPM}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              <div className="flex justify-center mt-10">
-                <button
-                  className="button bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-10 py-4 shadow text-xl"
-                  onClick={handleSimulate}
-                  disabled={loading}
-                >
-                  {loading ? 'Simulating...' : 'Simulate Prediction'}
-                </button>
+
+                      {/* Recommendation */}
+                      <div style={{ flex: 1, minWidth: 260 }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f472b6', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          💡 Recommendation
+                        </h3>
+                        <div style={{ fontSize: '1rem', color: '#f4f4f8' }}>{FAULT_RECOMMENDATIONS[result.Fault_Type] || 'Inspect and maintain as per fault type.'}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem' }}>
+                      {/* Sensor Readings Table */}
+                      <div style={{ flex: 1, minWidth: 320 }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#facc15', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          📊 Sensor Readings
+                        </h3>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', background: '#181c2a', borderRadius: 8, boxShadow: '0 1px 4px rgba(44,62,80,0.10)', border: '1px solid #334155', fontSize: '1rem', color: '#f4f4f8' }}>
+                            <thead>
+                              <tr style={{ background: '#232946', color: '#7dd3fc' }}>
+                                <th style={{ padding: 8, textAlign: 'left', fontWeight: 700 }}>Sensor</th>
+                                <th style={{ padding: 8, textAlign: 'center', fontWeight: 700 }}>Value</th>
+                                <th style={{ padding: 8, textAlign: 'center', fontWeight: 700 }}>Unit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr style={{ color: '#f4f4f8', borderTop: '1px solid #334155' }}>
+                                <td style={{ padding: 8, fontWeight: 600 }}>Torque</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>{result.Torque_Nm}</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>Nm</td>
+                              </tr>
+                              <tr style={{ color: '#f4f4f8', borderTop: '1px solid #334155' }}>
+                                <td style={{ padding: 8, fontWeight: 600 }}>Vibration Z</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>{result.Vibration_Z_mm_s}</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>mm/s</td>
+                              </tr>
+                              <tr style={{ color: '#f4f4f8', borderTop: '1px solid #334155' }}>
+                                <td style={{ padding: 8, fontWeight: 600 }}>Temperature</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>{result.Temperature_C}</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>°C</td>
+                              </tr>
+                              <tr style={{ color: '#f4f4f8', borderTop: '1px solid #334155' }}>
+                                <td style={{ padding: 8, fontWeight: 600 }}>Pressure</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>{result.Pressure_bar}</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>bar</td>
+                              </tr>
+                              <tr style={{ color: '#f4f4f8', borderTop: '1px solid #334155' }}>
+                                <td style={{ padding: 8, fontWeight: 600 }}>Flow Rate</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>{result.Flow_Rate_LPM}</td>
+                                <td style={{ padding: 8, textAlign: 'center' }}>LPM</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Analysis */}
+                      <div style={{ flex: 1, minWidth: 260 }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#5eead4', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          🧠 Analysis
+                        </h3>
+                        {getContributing(result).length > 0 ? (
+                          <div style={{ background: '#fef9c3', borderRadius: 8, padding: '1rem', border: '1px solid #fde68a', color: '#b45309', fontWeight: 600 }}>
+                            ⚠️ Contributing Factors: {getContributing(result).join(', ')}
+                          </div>
+                        ) : (
+                          <div style={{ background: '#166534', borderRadius: 8, padding: '1rem', border: '1px solid #bbf7d0', color: '#f4f4f8', fontWeight: 600 }}>
+                            ✅ All sensors normal. No contributing factors detected.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            {/* How to Use / Tips section pinned to bottom */}
-            <div className="p-6 bg-blue-50 rounded-xl border border-blue-200 shadow flex flex-col items-start mt-12">
-              <div className="font-bold text-blue-700 mb-3 text-lg">How to Use</div>
-              <ul className="list-disc list-inside text-lg text-gray-700 space-y-2">
-                <li>Adjust the sliders on the left to simulate different sensor readings.</li>
-                <li>See real-time status for each sensor and overall prediction here.</li>
-                <li>Click <b>Simulate Prediction</b> to get model results and recommendations.</li>
-                <li>Review your recent simulations in the history table above.</li>
-              </ul>
-            </div>
-          </div>
+          )}
+        </div>
+        
+        {/* Centered Simulate Button below sensor panel */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: '2.5rem',
+          marginBottom: '2.5rem'
+        }}>
+          <button
+            className="button bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-20 py-10 shadow-2xl text-3xl transform hover:scale-110 transition-all duration-300 border-2 border-blue-500"
+            onClick={handleSimulate}
+            disabled={loading}
+          >
+            {loading ? 'Simulating...' : 'Simulate Prediction'}
+          </button>
         </div>
       </div>
     </section>

@@ -1,0 +1,2 @@
+Timestamp,Rotational_Speed_RPM,Torque_Nm,Vibration_X_mm_s,Vibration_Y_mm_s,Vibration_Z_mm_s,Temperature_C,Pressure_bar,Flow_Rate_LPM
+2025-07-20T12:42:46.797Z,1500,76,2,2,4.8,70,25,335

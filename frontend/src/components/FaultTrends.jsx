@@ -189,75 +189,136 @@ const FaultTrend = () => {
   ));
 
   return (
-    <section className="section" id="trend">
-      <h2 className="text-xl font-bold mb-2">📈 Fault Trend Over Time</h2>
-      <p className="text-sm text-gray-700 mb-4">🗓 View how different faults occurred over time:</p>
+    <section className="section" id="trend" style={{ background: '#181c2a', minHeight: '100vh', paddingBottom: '3rem' }}>
+      <h2 style={{ color: '#14e0f9', fontWeight: 900, fontSize: '2.2rem', marginBottom: '0.5rem', letterSpacing: '0.01em' }}>📈 Fault Trend Over Time</h2>
+      <p style={{ color: '#bae6fd', fontSize: '1.1rem', marginBottom: '2.5rem', fontWeight: 500 }}>🗓 View how different faults occurred over time:</p>
 
       {/* Empty state if no data */}
       {rawData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-white/80 rounded-xl shadow-lg border border-blue-100">
-          <span className="text-5xl mb-4">📂</span>
-          <p className="text-lg text-gray-500 font-semibold mb-2">No data to display</p>
-          <p className="text-gray-400">Please upload and analyze a file to see the fault trend graph.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, padding: 32, background: '#232946', borderRadius: 16, boxShadow: '0 2px 12px rgba(20,224,249,0.08)', border: '1.5px solid #7dd3fc' }}>
+          <span style={{ fontSize: '3rem', marginBottom: 16 }}>📂</span>
+          <p style={{ fontSize: '1.2rem', color: '#7dd3fc', fontWeight: 700, marginBottom: 8 }}>No data to display</p>
+          <p style={{ color: '#bae6fd' }}>Please upload and analyze a file to see the fault trend graph.</p>
         </div>
       ) : (
         <>
           {/* Controls Card */}
-          <div className="bg-white/80 rounded-xl shadow-lg p-5 flex flex-wrap gap-6 mb-6 items-end border border-blue-100 mt-8">
+          <div style={{
+            background: '#232946',
+            borderRadius: 8,
+            border: '1.5px solid #7dd3fc',
+            boxShadow: '0 2px 12px rgba(20,224,249,0.08)',
+            padding: '0.8rem 1.2rem',
+            marginBottom: '2.5rem',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1.2rem',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
             {/* Date Range Picker */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="flex items-end gap-0 bg-white/95 rounded-full px-2 py-2 shadow-2xl border-2 border-blue-200">
-                {/* Start Date */}
-                <div className="flex flex-col items-center px-6 py-2">
-                  <label className="font-bold text-blue-700 text-xs mb-1 tracking-wider uppercase" htmlFor="start-date">Start Date</label>
-                  <DatePicker
-                    id="start-date"
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    dateFormat="yyyy-MM-dd"
-                    placeholderText="Start Date"
-                    className="hidden"
-                    isClearable
-                    calendarClassName="rounded-lg shadow-lg border border-blue-200"
-                    popperPlacement="bottom-start"
-                    customInput={<DateInput value={startDate ? startDate.toLocaleDateString() : ""} placeholder="Start Date" />}
-                  />
-                </div>
-                {/* Separator */}
-                <div className="flex flex-col items-center px-2">
-                  <span className="rounded-full bg-gradient-to-br from-blue-100 via-blue-200 to-blue-50 text-blue-700 font-extrabold text-base px-5 py-2 shadow border-2 border-blue-200" style={{ letterSpacing: 2, marginTop: 24, marginBottom: 8 }}>to</span>
-                </div>
-                {/* End Date */}
-                <div className="flex flex-col items-center px-6 py-2">
-                  <label className="font-bold text-blue-700 text-xs mb-1 tracking-wider uppercase" htmlFor="end-date">End Date</label>
-                  <DatePicker
-                    id="end-date"
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    dateFormat="yyyy-MM-dd"
-                    placeholderText="End Date"
-                    className="hidden"
-                    isClearable
-                    calendarClassName="rounded-lg shadow-lg border border-blue-200"
-                    popperPlacement="bottom-end"
-                    customInput={<DateInput value={endDate ? endDate.toLocaleDateString() : ""} placeholder="End Date" />}
-                  />
-                </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2.5rem',
+              background: '#232946',
+              borderRadius: '10px',
+              border: '1.5px solid #7dd3fc',
+              padding: '1.2rem 2.2rem',
+              boxShadow: '0 2px 12px rgba(20,224,249,0.08)',
+              marginBottom: '0.5rem',
+              marginTop: '0.5rem'
+            }}>
+              {/* Start Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <label style={{
+                  color: '#7dd3fc',
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  marginBottom: '0.4rem',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase'
+                }} htmlFor="start-date">Start Date</label>
+                <DatePicker
+                  id="start-date"
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Start Date"
+                  isClearable
+                  calendarClassName="calendar-dark"
+                  popperPlacement="bottom-start"
+                  customInput={
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      background: '#181c2a', color: '#f4f4f8', border: '1.5px solid #7dd3fc',
+                      borderRadius: 7, padding: '0.5rem 2.5rem 0.5rem 1.2rem', fontWeight: 700, fontSize: '1.1rem', minWidth: 140, cursor: 'pointer', position: 'relative'
+                    }}>
+                      <FaRegCalendarAlt style={{ color: '#7dd3fc', fontSize: '1.3rem' }} />
+                      <span>{startDate ? startDate.toLocaleDateString() : 'Start Date'}</span>
+                    </div>
+                  }
+                />
+              </div>
+              {/* Separator */}
+              <div style={{ color: '#7dd3fc', fontWeight: 900, fontSize: '1.3rem', margin: '0 0.5rem' }}>to</div>
+              {/* End Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <label style={{
+                  color: '#7dd3fc',
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  marginBottom: '0.4rem',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase'
+                }} htmlFor="end-date">End Date</label>
+                <DatePicker
+                  id="end-date"
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="End Date"
+                  isClearable
+                  calendarClassName="calendar-dark"
+                  popperPlacement="bottom-end"
+                  customInput={
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      background: '#181c2a', color: '#f4f4f8', border: '1.5px solid #7dd3fc',
+                      borderRadius: 7, padding: '0.5rem 2.5rem 0.5rem 1.2rem', fontWeight: 700, fontSize: '1.1rem', minWidth: 140, cursor: 'pointer', position: 'relative'
+                    }}>
+                      <FaRegCalendarAlt style={{ color: '#7dd3fc', fontSize: '1.3rem' }} />
+                      <span>{endDate ? endDate.toLocaleDateString() : 'End Date'}</span>
+                    </div>
+                  }
+                />
               </div>
             </div>
             {/* Granularity Selector */}
-            <div className="flex flex-col">
-              <label className="font-medium mb-1">⏳ Granularity</label>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 180 }}>
+              <label style={{ color: '#bae6fd', fontWeight: 700, fontSize: '1.05rem', marginBottom: 6, letterSpacing: '0.03em' }}>⏳ Granularity</label>
               <select
                 value={granularity}
                 onChange={(e) => setGranularity(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-gray-800 font-medium min-w-[140px]"
+                style={{
+                  border: '1.5px solid #7dd3fc',
+                  borderRadius: 8,
+                  padding: '0.7rem 1.5rem',
+                  background: '#181c2a',
+                  color: '#f4f4f8',
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  boxShadow: '0 1px 6px rgba(20,224,249,0.06)',
+                  minWidth: 120,
+                  outline: 'none',
+                  marginTop: 2
+                }}
               >
                 <option value="Hourly">Hourly</option>
                 <option value="Daily">Daily</option>
@@ -266,55 +327,88 @@ const FaultTrend = () => {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart
-              data={filteredData}
-              margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
-              onMouseMove={handleHover}
-              onMouseLeave={() => setTooltipData(null)}
-            >
-              <XAxis dataKey="timestamp" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {faultTypes.map(fault => (
-                <Line
-                  key={fault}
-                  type="monotone"
-                  dataKey={fault}
-                  stroke={webColorMap[fault]}
-                  name={fault}
-                  dot={false}
-                  strokeWidth={2}
-                  filter="url(#glow)"
+          {/* Chart Card */}
+          <div style={{
+            background: '#232946',
+            borderRadius: 16,
+            border: '1.5px solid #7dd3fc',
+            boxShadow: '0 2px 16px rgba(20,224,249,0.10)',
+            padding: '2.5rem 2.5rem 2rem 2.5rem',
+            marginBottom: '2.5rem',
+            position: 'relative'
+          }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={filteredData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
+                onMouseMove={handleHover}
+                onMouseLeave={() => setTooltipData(null)}
+              >
+                <XAxis dataKey="timestamp" stroke="#bae6fd" tick={{ fill: '#bae6fd', fontWeight: 600 }} />
+                <YAxis stroke="#bae6fd" tick={{ fill: '#bae6fd', fontWeight: 600 }} />
+                <Tooltip
+                  contentStyle={{ background: '#232946', border: '1.5px solid #7dd3fc', borderRadius: 10, color: '#f4f4f8', fontWeight: 700 }}
+                  labelStyle={{ color: '#14e0f9', fontWeight: 800 }}
                 />
-              ))}
-              {/* SVG filter for glow effect */}
-              <defs>
-                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-            </LineChart>
-          </ResponsiveContainer>
-
-          {tooltipData && tooltipData.length > 0 && (
-            <div className="mt-4 p-4 bg-gray-100 rounded shadow text-sm">
-              <h3 className="font-semibold text-lg">💡 Fault Details</h3>
-              {tooltipData.map((detail, idx) => (
-                <div key={idx} className="mb-2">
-                  <p><strong>Fault:</strong> {detail.fault}</p>
-                  <p><strong>Time:</strong> {new Date(detail.timestamp).toLocaleString()}</p>
-                  {Object.entries(detail).map(([key, val]) =>
-                    !["timestamp", "fault"].includes(key) ? (
-                      <p key={key}><strong>{key}:</strong> {val}</p>
-                    ) : null
+                <Legend
+                  wrapperStyle={{
+                    padding: '0 0 10px 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.2rem',
+                    fontWeight: 700
+                  }}
+                  iconType="plainline"
+                  formatter={(value, entry, index) => (
+                    <span style={{
+                      background: colorMap[value] || '#7dd3fc',
+                      color: '#232946',
+                      borderRadius: 999,
+                      padding: '0.3em 1.1em',
+                      fontWeight: 700,
+                      fontSize: '1.05rem',
+                      marginRight: 8,
+                      display: 'inline-block',
+                      boxShadow: '0 1px 4px rgba(20,224,249,0.10)'
+                    }}>{value}</span>
                   )}
-                  <hr />
+                />
+                {faultTypes.map(fault => (
+                  <Line
+                    key={fault}
+                    type="monotone"
+                    dataKey={fault}
+                    stroke={colorMap[fault]}
+                    name={fault}
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Tooltip Data Below Chart */}
+          {tooltipData && (
+            <div style={{
+              background: '#232946',
+              border: '1.5px solid #7dd3fc',
+              borderRadius: 12,
+              boxShadow: '0 1px 8px rgba(20,224,249,0.08)',
+              padding: '1.2rem 2rem',
+              marginBottom: '2.5rem',
+              color: '#f4f4f8',
+              fontWeight: 600,
+              fontSize: '1.08rem',
+              marginTop: '1.5rem'
+            }}>
+              <div style={{ color: '#14e0f9', fontWeight: 800, fontSize: '1.15rem', marginBottom: 8 }}>Details for Selected Point:</div>
+              {tooltipData.map((d, i) => (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <span style={{ color: colorMap[d.Fault_Type] || '#7dd3fc', fontWeight: 700 }}>{d.Fault_Type}</span>
+                  {Object.entries(d).filter(([k]) => k !== 'Fault_Type' && k !== 'Timestamp').map(([k, v]) => (
+                    <span key={k} style={{ marginLeft: 12, color: '#bae6fd', fontWeight: 500 }}>{k}: {v}</span>
+                  ))}
                 </div>
               ))}
             </div>

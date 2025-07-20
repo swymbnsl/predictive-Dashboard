@@ -1,0 +1,2 @@
+Timestamp,Rotational_Speed_RPM,Torque_Nm,Vibration_X_mm_s,Vibration_Y_mm_s,Vibration_Z_mm_s,Temperature_C,Pressure_bar,Flow_Rate_LPM,Vibration_Mean,Vibration_Std,Vibration_Range,Flow_to_Pressure,Torque_RPM,Temp_Pressure,Fault_Type
+2025-07-20 11:46:28.537000+00:00,3000,100,10,10,10,200,0.5,50,10.0,0.0,0,99.8003992015968,300000,100.0,Normal
